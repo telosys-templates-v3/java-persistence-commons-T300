@@ -27,6 +27,13 @@ public interface ${entity.name}Persistence {
 	List<${recordClass}> findAll();
 
 	/**
+	 * Counts all the records present in the database
+	 * @return
+	 */
+	public long countAll() ;
+
+
+	/**
 	 * Saves the given entity in the database (create or update)
 	 * @param entity
 	 * @return entity
@@ -64,5 +71,21 @@ public interface ${entity.name}Persistence {
 	 * @return true if the entity has been deleted, false if not found and not deleted
 	 */
 	boolean delete( ${recordClass} entity );
+
+	/**
+	 * Returns true if an entity exists with the given Id / Primary Key 
+#foreach( $attribute in $entity.keyAttributes )
+	 * @param $attribute.name
+#end
+	 * @return
+	 */
+	public boolean exists( $fn.argumentsListWithWrapperType($entity.keyAttributes) ) ;
+
+	/**
+	 * Returns true if the given entity exists
+	 * @param entity
+	 * @return
+	 */
+	public boolean exists( ${recordClass} entity ) ;
 
 }

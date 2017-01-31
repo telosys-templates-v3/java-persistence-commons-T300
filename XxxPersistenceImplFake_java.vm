@@ -60,6 +60,11 @@ public class ${entity.name}PersistenceImplFake implements ${entity.name}Persiste
 	}
 
 	@Override
+	public long countAll() {
+		return map.size() ;
+	}
+
+	@Override
 	public ${recordClass} save(${recordClass} entity) {
 		String key = getKey( $fn.argumentsListWithGetter( "entity", $keyFields) );
 		map.put(key, entity );
@@ -104,6 +109,16 @@ public class ${entity.name}PersistenceImplFake implements ${entity.name}Persiste
 		String key = getKey( $fn.argumentsListWithGetter( "entity", $keyFields) );
 		${recordClass} deleted = map.remove(key);
 		return deleted != null ;
+	}
+
+	@Override
+	public boolean exists($fn.argumentsListWithWrapperType($keyFields)) {
+		return findById($fn.argumentsList($keyFields)) != null ;
+	}
+
+	@Override
+	public boolean exists(${recordClass} entity) {
+		return findById( $fn.argumentsListWithGetter( "entity", $keyFields) ) != null ;
 	}
 
 }
