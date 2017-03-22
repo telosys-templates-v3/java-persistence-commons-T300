@@ -16,8 +16,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.SQLException;
-
 import ${recordPackage}.${recordClass} ;
 import ${ROOT_PKG}.persistence.${entity.name}Persistence;
 
@@ -29,15 +27,14 @@ import ${ROOT_PKG}.persistence.${entity.name}Persistence;
  */
 public class ${entity.name}PersistenceGenericTest {
 
+#if ( $entity.hasAutoIncrementedKey() == false )
 	/**
 	 * Generic test for a persistence service
 	 * @param persistenceService
 	 * @throws SQLException
 	 */
-	public void testPersistenceService(${persistenceInterface} persistenceService) throws SQLException {
+	public void testPersistenceService(${persistenceInterface} persistenceService) {
     	System.out.println("--- test ${persistenceInterface} ");
-
-    	assertTrue( persistenceService.countAll() == 0 );
 
     	${recordClass} $recordInstance = new ${recordClass}();
 ##-----------------------------------------------------------------------------
@@ -56,8 +53,16 @@ public class ${entity.name}PersistenceGenericTest {
 
 ##-----------------------------------------------------------------------------
 
+    	//--- DELETE
+    	System.out.println("Delete : " + ${recordInstance} );
+    	persistenceService.delete(${recordInstance}) ; // Just to be sure it doesn't exist before insert
+
+		long initialCount = persistenceService.countAll() ;
+    	System.out.println("Initial count = " + initialCount );
+
     	//--- CREATE
-    	System.out.println("Insert : " + ${recordInstance} );
+    	System.out.println("Create : " + ${recordInstance} );
+#*
 #if ( $entity.hasAutoIncrementedKey() )
     	$entity.autoincrementedKeyAttribute.type pkAutoIncr = (${entity.autoincrementedKeyAttribute.type}) persistenceService.create(${recordInstance});
 		${recordInstance}.${entity.autoincrementedKeyAttribute.setter}( pkAutoIncr );
@@ -66,16 +71,28 @@ public class ${entity.name}PersistenceGenericTest {
     	persistenceService.create(${recordInstance});
     	assertTrue( persistenceService.exists($keyValues.allValues) );
 #end
-    	assertTrue( persistenceService.countAll() == 1 );
-    	assertTrue( persistenceService.exists($recordInstance) );
-    	
+*#
+    	persistenceService.create(${recordInstance});
+#if ( $entity.hasAutoIncrementedKey() )
+		// Retrieve the generated id 
+		$entity.autoincrementedKeyAttribute.type pkAutoIncr = ${recordInstance}.${entity.autoincrementedKeyAttribute.getter}() ;
+    	assertTrue( persistenceService.exists(pkAutoIncr) );
+#else
+    	assertTrue( persistenceService.exists($keyValues.allValues) );
+#end
+		assertTrue( persistenceService.exists($recordInstance) );
+		long count = persistenceService.countAll() ;
+    	System.out.println("Count = " + count );
+		assertEquals(initialCount+1, count );
+
     	//--- FIND
-    	System.out.println("Find..." );
+    	System.out.println("Find by id..." );
 #if ( $entity.hasAutoIncrementedKey() )
     	${recordClass} ${recordInstance}2 = persistenceService.findById(pkAutoIncr);
 #else
     	${recordClass} ${recordInstance}2 = persistenceService.findById($keyValues.allValues);
 #end
+    	System.out.println("Found : " + ${recordInstance}2 );
     	assertNotNull(${recordInstance}2);
 #if ( $entity.hasAutoIncrementedKey() == false )
 #foreach( $attribute in $entity.keyAttributes )
@@ -98,6 +115,7 @@ public class ${entity.name}PersistenceGenericTest {
 #end
     	
     	//--- RELOAD AFTER UPDATE
+    	System.out.println("Find by id..." );
 #if ( $entity.hasAutoIncrementedKey() )
     	${recordClass} ${recordInstance}3 = persistenceService.findById(pkAutoIncr);
 #else
@@ -115,7 +133,10 @@ public class ${entity.name}PersistenceGenericTest {
     	assertFalse( persistenceService.delete(${recordInstance}2) ); // Nothing (already deleted)
     	assertFalse( persistenceService.deleteById($keyValues.allValues) ); // Nothing (already deleted)
 
-    	assertTrue( persistenceService.countAll() == 0 );
+		long finalCount = persistenceService.countAll() ;
+    	System.out.println("Final count = " + finalCount );
+		assertEquals(initialCount, finalCount);
+
     	assertFalse( persistenceService.exists($keyValues.allValues) ) ;
     	assertFalse( persistenceService.exists(${recordInstance}2) ) ;
     	${recordInstance}2 = persistenceService.findById($keyValues.allValues);
@@ -123,5 +144,97 @@ public class ${entity.name}PersistenceGenericTest {
     	
     	System.out.println("Normal end of persistence service test." );
 	}
+#end
+##----------------------------------------------------------------------------------------
+##----------------------------------------------------------------------------------------
+#if ( $entity.hasAutoIncrementedKey() )
+	/**
+	 * Persistence service generic test for a record with an auto-incremented key
+	 * @param persistenceService
+	 * @throws SQLException
+	 */
+	public void testPersistenceServiceWithAutoincrementedKey(AutoIncrPersistence persistenceService) {
+    	System.out.println("--- test ${persistenceInterface} ");
 
+    	${recordClass} record = new ${recordClass}();
+##-----------------------------------------------------------------------------
+		// Auto-incremented key : nothing to set in the Primary Key
+		//--- Other values
+#foreach( $attribute in $entity.nonKeyAttributes )
+		record.${attribute.setter}($dataValues.getValue($attribute.name)); // "$attribute.databaseName" : $attribute.fullType
+#end
+##-----------------------------------------------------------------------------
+
+		long initialCount = persistenceService.countAll() ;
+    	System.out.println("Initial count = " + initialCount );
+
+    	//--- CREATE #1
+    	System.out.println("Create : " + record);
+    	persistenceService.create(record);
+		// Retrieve the generated id 
+		$entity.autoincrementedKeyAttribute.type generatedId = record.${entity.autoincrementedKeyAttribute.getter}() ;
+    	System.out.println("Generated id #1 = " + generatedId ); 
+    	assertTrue( persistenceService.exists(generatedId) );
+		assertTrue( persistenceService.exists(record) );
+		long count = persistenceService.countAll() ;
+    	System.out.println("Count = " + count );
+		assertEquals(initialCount+1, count );
+
+    	//--- CREATE #2
+		record = new ${recordClass}();  // Mandatory for JPA 
+		persistenceService.create(record);
+		$entity.autoincrementedKeyAttribute.type generatedId2 = record.${entity.autoincrementedKeyAttribute.getter}() ;
+    	System.out.println("Generated id #2 = " + generatedId2 ); 
+		assertEquals(generatedId+1, generatedId2 );
+
+    	//--- CREATE #3
+		record = new ${recordClass}();  // Mandatory for JPA 
+		persistenceService.create(record);
+		$entity.autoincrementedKeyAttribute.type generatedId3 = record.${entity.autoincrementedKeyAttribute.getter}() ;
+    	System.out.println("Generated id #3 = " + generatedId3 ); 
+		assertEquals(generatedId2+1, generatedId3 );
+
+    	//--- FIND #1
+    	System.out.println("Find by id #1 ..." );
+    	${recordClass} record1 = persistenceService.findById(generatedId);
+    	System.out.println("Found : " + record1 );
+    	assertNotNull(record1);
+    	assertTrue( persistenceService.exists(record1) ) ;
+
+    	//--- FIND #2
+    	System.out.println("Find by id #2 ..." );
+    	${recordClass} record2 = persistenceService.findById(generatedId2);
+    	System.out.println("Found : " + record2 );
+    	assertNotNull(record2);
+    	assertTrue( persistenceService.exists(record2) ) ;
+
+#if ( $entity.nonKeyAttributesCount > 0 )
+    	//--- UPDATE
+		//--- Change values
+#foreach( $attribute in $entity.nonKeyAttributes )
+		record2.${attribute.setter}($dataValues2.getValue($attribute.name)); // "$attribute.databaseName" : $attribute.fullType
+#end
+    	System.out.println("Update : " + record2 );
+    	assertTrue( persistenceService.update(record2) );
+#else
+    	//--- NO UPDATE FOR THIS ENTITY (ALL COLUMNS IN PRIMARY KEY)
+#end
+
+    	//--- RELOAD AFTER UPDATE
+    	System.out.println("Find by id..." );
+    	${recordClass} record2reloaded = persistenceService.findById(generatedId2);
+    	assertNotNull(record2reloaded);
+    	System.out.println("Found : " + record2reloaded );
+#foreach( $attribute in $entity.nonKeyAttributes )
+		assertEquals(record2.${attribute.getter}(), record2reloaded.${attribute.getter}() ); 
+#end
+
+    	//--- DELETE
+    	System.out.println("Delete : " + record2 );
+    	assertTrue(  persistenceService.delete(record2) ); // First delete : OK
+    	assertFalse( persistenceService.delete(record2) ); // Nothing (already deleted)
+    	assertFalse( persistenceService.deleteById(generatedId2) ); // Nothing (already deleted)
+
+	}
+#end
 }
