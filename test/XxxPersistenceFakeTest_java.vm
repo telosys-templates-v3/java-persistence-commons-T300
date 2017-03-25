@@ -1,14 +1,12 @@
 #checkId($entity)
-#parse("../include/init_variables.vm")
+#parse("../include/init_var_entity.vm")
 #parse("../include/java_header.vm")
 ##--------------------------------------------------------------------------------------------------------
-#set( $persistenceInterface = "${entity.name}Persistence" )
+## #set( $persistenceInterface = "${entity.name}Persistence" )
 ##--------------------------------------------------------------------------------------------------------
 package ${target.javaPackageFromFolder($TEST_SRC)};
 
-import java.sql.SQLException;
-
-import ${ROOT_PKG}.persistence.$persistenceInterface ;
+import ${ROOT_PKG}.persistence.$persistenceServiceInterface ;
 import ${ROOT_PKG}.persistence.${entity.name}PersistenceGenericTest;
 import org.junit.Test;
 
@@ -21,11 +19,16 @@ import org.junit.Test;
 public class ${entity.name}PersistenceFakeTest extends ${entity.name}PersistenceGenericTest {
 
 	@Test
-	public void testPersistenceService() throws SQLException {
-    	System.out.println("test $persistenceInterface ");
+	public void testPersistenceService() {
+    	System.out.println("test $persistenceServiceClass ");
 
-    	$persistenceInterface persistenceService = new ${entity.name}PersistenceImplFake();
+    	$persistenceServiceInterface persistenceService = new $persistenceServiceClass();
 
+#if ( $entity.hasAutoIncrementedKey() )
+    	testPersistenceServiceWithAutoincrementedKey(persistenceService);
+#else
     	testPersistenceService(persistenceService);
+#end
+
 	}	
 }
