@@ -47,6 +47,13 @@ public abstract class GenericFakeDAO<T> {
 	//-----------------------------------------------------------------------------------------
 	// UTILITY METHODS
 	//-----------------------------------------------------------------------------------------
+	protected int toInt(long value) {
+		return (int)value;
+	}
+	
+	protected short toShort(long value) {
+		return (short)value;
+	}
 
 	@SuppressWarnings("unchecked")
 	private Map<String,T> getMap() {

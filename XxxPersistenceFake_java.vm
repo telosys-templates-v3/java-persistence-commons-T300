@@ -59,7 +59,14 @@ public class $persistenceServiceClass extends GenericFakeDAO<${recordClass}> imp
 	@Override
 	protected void setAutoIncrementedKey(${recordClass} record, long value) {
 #if( $entity.hasAutoIncrementedKey() )
-		record.${entity.autoincrementedKeyAttribute.setter}((${entity.autoincrementedKeyAttribute.type})value);
+#if( $entity.autoincrementedKeyAttribute.isIntegerType() )
+		record.${entity.autoincrementedKeyAttribute.setter}(toInt(value));
+#elseif ( $entity.autoincrementedKeyAttribute.isShortType() )
+		record.${entity.autoincrementedKeyAttribute.setter}(toShort(value));
+#else
+		//record.${entity.autoincrementedKeyAttribute.setter}((${entity.autoincrementedKeyAttribute.type})value);
+		record.${entity.autoincrementedKeyAttribute.setter}(value);
+#end
 #else
 		throw new IllegalStateException("Unexpected call to method 'setAutoIncrementedKey'");
 #end
