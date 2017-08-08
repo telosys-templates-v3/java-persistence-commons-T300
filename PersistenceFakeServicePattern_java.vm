@@ -11,6 +11,7 @@ package ${target.javaPackageFromFolder(${SRC})};
  */
 public class PersistenceFakeServicePattern {
 
-	public final static String  PATTERN = "%s.impl.fake.%sImplFake" ;
+	public final static String  PATTERN = "%s.impl.fake.%sFake" ;
+
 	
 }
