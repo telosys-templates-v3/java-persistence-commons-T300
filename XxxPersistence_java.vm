@@ -4,6 +4,10 @@ package ${target.javaPackageFromFolder(${SRC})};
 
 import java.util.List;
 
+#foreach( $import in $java.imports($entity.keyAttributes) )
+import $import;
+#end
+
 import ${recordPackage}.${recordClass};
 
 /**
